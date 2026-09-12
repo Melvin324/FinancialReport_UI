@@ -12,6 +12,8 @@ export interface RawReportData {
   debtRatio: number;
   eps: number;
   rawJson: string;
+  /** true = 真实接口不可用/无法识别交易所，当前是模拟数据，不能当真实财报展示 */
+  isMock: boolean;
 }
 
 export interface SummaryResponse {

@@ -38,5 +38,8 @@ export async function getHistory(page = 1, pageSize = 10): Promise<HistoryRespon
 }
 
 export async function clearHistory(): Promise<void> {
-  await fetch(`${API_BASE}/history`, { method: 'DELETE' });
+  const resp = await fetch(`${API_BASE}/history`, { method: 'DELETE' });
+  if (!resp.ok) {
+    throw new Error(`清空历史失败 (${resp.status})`);
+  }
 }

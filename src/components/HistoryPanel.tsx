@@ -18,6 +18,8 @@ export function HistoryPanel({ refreshKey, onReplay }: HistoryPanelProps) {
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,13 +50,31 @@ export function HistoryPanel({ refreshKey, onReplay }: HistoryPanelProps) {
     setPage(1); // 改变 page size 时重置到第 1 页
   };
 
-  const handleClear = async () => {
-    if (!confirm('确定清空所有搜索历史？')) return;
-    await clearHistory();
-    setItems([]);
-    setTotal(0);
-    setTotalPages(0);
-    setPage(1);
+  // 不用 window.confirm()——在内嵌预览 / webview 里原生弹窗经常被浏览器直接拦截并
+  // 静默返回 false，导致按钮看起来"点了没反应"。改成点两下的行内二次确认。
+  useEffect(() => {
+    if (!confirmingClear) return;
+    const timer = setTimeout(() => setConfirmingClear(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmingClear]);
+
+  const handleClearClick = async () => {
+    if (!confirmingClear) {
+      setConfirmingClear(true);
+      setClearError(null);
+      return;
+    }
+    setConfirmingClear(false);
+    try {
+      await clearHistory();
+      setItems([]);
+      setTotal(0);
+      setTotalPages(0);
+      setPage(1);
+      setClearError(null);
+    } catch {
+      setClearError('清空失败，请检查网络后重试');
+    }
   };
 
   return (
@@ -62,9 +82,17 @@ export function HistoryPanel({ refreshKey, onReplay }: HistoryPanelProps) {
       <div className="history-header">
         <h3>📋 搜索历史 <span className="total-badge">{total}</span></h3>
         {total > 0 && (
-          <button className="clear-btn" onClick={handleClear}>清空</button>
+          <button
+            className={confirmingClear ? 'clear-btn clear-btn-confirming' : 'clear-btn'}
+            onClick={handleClearClick}
+            title={confirmingClear ? '再点一次确认清空' : undefined}
+          >
+            {confirmingClear ? '确定清空？' : '清空'}
+          </button>
         )}
       </div>
+
+      {clearError && <p className="history-clear-error">{clearError}</p>}
 
       {loading && items.length === 0 ? (
         <p className="history-empty">加载中...</p>

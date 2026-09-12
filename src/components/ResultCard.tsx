@@ -46,6 +46,12 @@ export function ResultCard({ data }: ResultCardProps) {
         <span>{new Date(data.generatedAt).toLocaleString('zh-CN')}</span>
       </div>
 
+      {data.rawData.isMock && (
+        <div className="mock-banner">
+          ⚠️ 真实财报接口暂不可用，以下为模拟演示数据，请勿作为投资参考
+        </div>
+      )}
+
       <div className="summary">{renderSummary(data.summary)}</div>
 
       <div className="raw-toggle" onClick={() => setShowRaw(!showRaw)}>
